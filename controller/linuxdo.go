@@ -119,6 +119,7 @@ func LinuxDoOAuth(c *gin.Context) {
 		LinuxDoId: strconv.Itoa(linuxdoUser.ID),
 	}
 	if model.IsLinuxDoIdAlreadyTaken(user.LinuxDoId) {
+		//如果已经登录了，就查找用户信息填充到user中
 		err := user.FillUserByLinuxDoId()
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{
@@ -147,6 +148,23 @@ func LinuxDoOAuth(c *gin.Context) {
 					"message": err.Error(),
 				})
 				return
+			} else {
+				// 添加调试信息：记录用户等级和相应的配额
+				common.SysLog(fmt.Sprintf("Setting quota for user with trust level %d: %s", linuxdoUser.TrustLevel, user.Username))
+
+				switch linuxdoUser.TrustLevel {
+				case 1:
+					model.IncreaseUserQuota(user.Id, common.QuotaForLinuxDoLevel1*500000)
+					common.SysLog(fmt.Sprintf("User '%s' assigned quota: %d (Level 1)", user.Username, common.QuotaForLinuxDoLevel1))
+				case 2:
+					model.IncreaseUserQuota(user.Id, common.QuotaForLinuxDoLevel2*500000)
+					common.SysLog(fmt.Sprintf("User '%s' assigned quota: %d (Level 2)", user.Username, common.QuotaForLinuxDoLevel2))
+				case 3:
+					model.IncreaseUserQuota(user.Id, common.QuotaForLinuxDoLevel3*500000)
+					common.SysLog(fmt.Sprintf("User '%s' assigned quota: %d (Level 3)", user.Username, common.QuotaForLinuxDoLevel3))
+				default:
+					common.SysLog(fmt.Sprintf("WARNING: User '%s' has an unknown trust level: %d", user.Username, linuxdoUser.TrustLevel))
+				}
 			}
 		} else {
 			c.JSON(http.StatusOK, gin.H{

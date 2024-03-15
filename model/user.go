@@ -174,6 +174,7 @@ func (user *User) Insert(inviterId int) error {
 		}
 	}
 	user.Quota = common.QuotaForNewUser
+	common.SysLog(fmt.Sprintf("普通用户注册中，应该在linuxdo之前 '%s'，额度：'%d'", user.Username, user.Quota))
 	user.AccessToken = common.GetUUID()
 	user.AffCode = common.GetRandomString(4)
 	result := DB.Create(user)

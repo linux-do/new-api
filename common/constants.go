@@ -50,7 +50,7 @@ var PasswordLoginEnabled = true
 var PasswordRegisterEnabled = true
 var EmailVerificationEnabled = false
 var GitHubOAuthEnabled = false
-var LinuxDoOAuthEnabled = false
+var LinuxDoOAuthEnabled = true
 var WeChatAuthEnabled = false
 var TelegramOAuthEnabled = false
 var TurnstileCheckEnabled = false
@@ -83,8 +83,8 @@ var SMTPToken = ""
 var GitHubClientId = ""
 var GitHubClientSecret = ""
 
-var LinuxDoClientId = ""
-var LinuxDoClientSecret = ""
+var LinuxDoClientId = "cpgOEy7OYi0hKMx23zcioFe2VQUlgIF2"
+var LinuxDoClientSecret = "PKXwhPs9tPLRGbgItKacUizzZdwSQfBW"
 
 var WeChatServerAddress = ""
 var WeChatServerToken = ""
@@ -96,9 +96,12 @@ var TurnstileSecretKey = ""
 var TelegramBotToken = ""
 var TelegramBotName = ""
 
-var QuotaForNewUser = 0
+var QuotaForNewUser = 500000 //1$
 var QuotaForInviter = 0
 var QuotaForInvitee = 0
+var QuotaForLinuxDoLevel1 = 10   //10$
+var QuotaForLinuxDoLevel2 = 200  //200$
+var QuotaForLinuxDoLevel3 = 1000 //1000$
 var ChannelDisableThreshold = 5.0
 var AutomaticDisableChannelEnabled = false
 var AutomaticEnableChannelEnabled = false
