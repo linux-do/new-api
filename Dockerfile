@@ -1,4 +1,4 @@
-FROM node:16 as builder
+FROM node:16-slim as builder
 
 WORKDIR /build
 COPY web/package.json .
@@ -7,18 +7,19 @@ COPY ./web .
 COPY ./VERSION .
 RUN DISABLE_ESLINT_PLUGIN='true' REACT_APP_VERSION=$(cat VERSION) npm run build
 
-FROM golang AS builder2
-
+FROM golang:1.19-alpine AS builder2
+RUN apk add build-base
 ENV GO111MODULE=on \
     CGO_ENABLED=1 \
     GOOS=linux
 
 WORKDIR /build
-ADD go.mod go.sum ./
-RUN go mod download
+#ADD go.mod go.sum ./
 COPY . .
 COPY --from=builder /build/build ./web/build
-RUN go build -ldflags "-s -w -X 'one-api/common.Version=$(cat VERSION)' -extldflags '-static'" -o one-api
+
+RUN go mod tidy \
+    && go build -ldflags "-s -w -X 'one-api/common.Version=$(cat VERSION)' -extldflags '-static'" -o one-api
 
 FROM alpine
 
