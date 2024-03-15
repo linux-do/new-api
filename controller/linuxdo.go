@@ -6,14 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/url"
-	"one-api/common"
-	"one-api/model"
 	"strconv"
 	"time"
+
+	"one-api/common"
+	"one-api/model"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
 type LinuxDoOAuthResponse struct {
@@ -23,12 +25,73 @@ type LinuxDoOAuthResponse struct {
 }
 
 type LinuxDoUser struct {
-	ID         int    `json:"id"`
-	Username   string `json:"username"`
-	Name       string `json:"name"`
-	Active     bool   `json:"active"`
-	TrustLevel int    `json:"trust_level"`
-	Silenced   bool   `json:"silenced"`
+	ID         int               `json:"id"`
+	Username   string            `json:"username"`
+	Name       string            `json:"name"`
+	Active     bool              `json:"active"`
+	TrustLevel common.TrustLevel `json:"trust_level"`
+	Silenced   bool              `json:"silenced"`
+}
+
+type UserHandler interface {
+	Do() (*model.User, error)
+}
+
+type existingUserHandler struct {
+	*LinuxDoUser
+}
+
+func (h existingUserHandler) Do() (*model.User, error) {
+	user := &model.User{
+		LinuxDoId: strconv.Itoa(h.ID),
+	}
+
+	err := user.FillUserByLinuxDoId()
+	if err != nil {
+		return nil, err
+	}
+
+	trustLevelStr := h.TrustLevel.String()
+	if user.Group != trustLevelStr {
+		user.Group = trustLevelStr
+		err = user.Update(false)
+		if err != nil {
+			return nil, fmt.Errorf("更新用户组失败: %w", err)
+		}
+	}
+
+	return user, err
+}
+
+type newUserHandler struct {
+	ginCtx      *gin.Context
+	linuxDoUser *LinuxDoUser
+}
+
+func (h newUserHandler) Do() (*model.User, error) {
+	if !common.RegisterEnabled {
+		return nil, errors.New("管理员关闭了新用户注册")
+	}
+
+	affCode := h.ginCtx.Query("aff")
+
+	user := new(model.User)
+	user.LinuxDoId = strconv.Itoa(h.linuxDoUser.ID)
+	user.InviterId, _ = model.GetUserIdByAffCode(affCode)
+	user.Username = "linuxdo_" + strconv.Itoa(model.GetMaxUserId()+1)
+	if h.linuxDoUser.Name != "" {
+		user.DisplayName = h.linuxDoUser.Name
+	} else {
+		user.DisplayName = h.linuxDoUser.Username
+	}
+	user.Role = common.RoleCommonUser
+	user.Status = common.UserStatusEnabled
+	user.Group = h.linuxDoUser.TrustLevel.String()
+	if err := user.Insert(user.InviterId); err != nil {
+		return nil, fmt.Errorf("创建用户失败: %w", err)
+	}
+
+	return user, nil
 }
 
 func getLinuxDoUserInfoByCode(code string) (*LinuxDoUser, error) {
@@ -107,7 +170,7 @@ func LinuxDoOAuth(c *gin.Context) {
 		return
 	}
 	code := c.Query("code")
-	linuxdoUser, err := getLinuxDoUserInfoByCode(code)
+	linuxDoUser, err := getLinuxDoUserInfoByCode(code)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -115,46 +178,21 @@ func LinuxDoOAuth(c *gin.Context) {
 		})
 		return
 	}
-	user := model.User{
-		LinuxDoId: strconv.Itoa(linuxdoUser.ID),
-	}
-	if model.IsLinuxDoIdAlreadyTaken(user.LinuxDoId) {
-		err := user.FillUserByLinuxDoId()
-		if err != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"success": false,
-				"message": err.Error(),
-			})
-			return
-		}
+
+	var userHandler UserHandler
+	if model.IsLinuxDoIdAlreadyTaken(strconv.Itoa(linuxDoUser.ID)) {
+		userHandler = existingUserHandler{linuxDoUser}
 	} else {
-		if common.RegisterEnabled {
-			affCode := c.Query("aff")
-			user.InviterId, _ = model.GetUserIdByAffCode(affCode)
+		userHandler = newUserHandler{c, linuxDoUser}
+	}
 
-			user.Username = "linuxdo_" + strconv.Itoa(model.GetMaxUserId()+1)
-			if linuxdoUser.Name != "" {
-				user.DisplayName = linuxdoUser.Name
-			} else {
-				user.DisplayName = linuxdoUser.Username
-			}
-			user.Role = common.RoleCommonUser
-			user.Status = common.UserStatusEnabled
-
-			if err := user.Insert(user.InviterId); err != nil {
-				c.JSON(http.StatusOK, gin.H{
-					"success": false,
-					"message": err.Error(),
-				})
-				return
-			}
-		} else {
-			c.JSON(http.StatusOK, gin.H{
-				"success": false,
-				"message": "管理员关闭了新用户注册",
-			})
-			return
-		}
+	user, err := userHandler.Do()
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
 	}
 
 	if user.Status != common.UserStatusEnabled {
@@ -164,7 +202,8 @@ func LinuxDoOAuth(c *gin.Context) {
 		})
 		return
 	}
-	setupLogin(&user, c)
+
+	setupLogin(user, c)
 }
 
 func LinuxDoBind(c *gin.Context) {
@@ -207,6 +246,7 @@ func LinuxDoBind(c *gin.Context) {
 		return
 	}
 	user.LinuxDoId = strconv.Itoa(linuxdoUser.ID)
+	user.Group = linuxdoUser.TrustLevel.String()
 	err = user.Update(false)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{

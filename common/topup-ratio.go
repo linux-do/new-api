@@ -3,9 +3,11 @@ package common
 import "encoding/json"
 
 var TopupGroupRatio = map[string]float64{
-	"default": 1,
-	"vip":     1,
-	"svip":    1,
+	LinuxDoTrustLevel0: 1,
+	LinuxDoTrustLevel1: 1,
+	LinuxDoTrustLevel2: 1,
+	LinuxDoTrustLevel3: 1,
+	LinuxDoTrustLevel4: 1,
 }
 
 func TopupGroupRatio2JSONString() string {

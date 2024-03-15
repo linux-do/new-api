@@ -16,12 +16,12 @@ export function renderGroup(group) {
     groups.sort();
     return <>
         {groups.map((group) => {
-            if (group === 'vip' || group === 'pro') {
+            if (group === 'level3' || group === 'level4') {
                 return <Tag size='large' color='yellow'>{group}</Tag>;
-            } else if (group === 'svip' || group === 'premium') {
+            } else if (group === 'level2' || group === 'level1') {
                 return <Tag size='large' color='red'>{group}</Tag>;
             }
-            if (group === 'default') {
+            if (group === 'level0') {
                 return <Tag size='large'>{group}</Tag>;
             } else {
                 return <Tag size='large' color={stringToColor(group)}>{group}</Tag>;
