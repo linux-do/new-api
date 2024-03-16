@@ -22,6 +22,8 @@ type User struct {
 	Email            string         `json:"email" gorm:"index" validate:"max=50"`
 	GitHubId         string         `json:"github_id" gorm:"column:github_id;index"`
 	LinuxDoId        string         `json:"linuxdo_id" gorm:"column:linuxdo_id;index"`
+	LinuxTrustLevel  int            `json:"trust_level" gorm:"type:int;default:0"`
+	RefeashTimeStamp int64 		`json:"refeash_time_stamp" gorm:"type:bigint;default:0"`
 	WeChatId         string         `json:"wechat_id" gorm:"column:wechat_id;index"`
 	TelegramId       string         `json:"telegram_id" gorm:"column:telegram_id;index"`
 	VerificationCode string         `json:"verification_code" gorm:"-:all"`                                    // this field is only for Email verification, don't save it to database!
@@ -386,6 +388,12 @@ func GetUserQuota(id int) (quota int, err error) {
 	return quota, err
 }
 
+func GetUserRefreshTimeStamp(id int) (timeStamp int64, err error) {
+	err = DB.Model(&User{}).Where("id = ?", id).Select("refeash_time_stamp").Find(&timeStamp).Error
+	return timeStamp, err
+}
+
+
 func GetUserUsedQuota(id int) (quota int, err error) {
 	err = DB.Model(&User{}).Where("id = ?", id).Select("used_quota").Find(&quota).Error
 	return quota, err
@@ -404,6 +412,43 @@ func GetUserGroup(id int) (group string, err error) {
 
 	err = DB.Model(&User{}).Where("id = ?", id).Select(groupCol).Find(&group).Error
 	return group, err
+}
+
+func RefreshUserQuotaAndSave(id int, TimeStamp int64) (err error) {
+	user, err := GetUserById(id, true)
+	if err != nil && user.LinuxDoId == "" {
+		return err
+	}
+	
+	// 根据信任等级刷新用户额度
+	user.Quota =  user.UsedQuota
+	switch user.LinuxTrustLevel {
+		case 1:
+			user.Quota += common.QuotaForLinuxDoLevel1
+		case 2:
+			user.Quota += common.QuotaForLinuxDoLevel2
+		case 3:
+			user.Quota += common.QuotaForLinuxDoLevel3
+		case 4:
+			user.Quota += common.QuotaForLinuxDoLevel4
+	}
+	// 更新用户刷新时间戳
+	user.RefeashTimeStamp = TimeStamp
+	RecordLog(id, LogTypeSystem, fmt.Sprintf("LinuxDO 用户信任等级 %d，额度自动刷新", user.LinuxTrustLevel))
+
+	// 将额度和时间戳写入数据库
+	err = DB.Model(&User{}).Where("id = ?", id).Updates(
+		map[string]interface{}{
+			"quota":    user.Quota,
+			"refeash_time_stamp": user.RefeashTimeStamp,
+		},
+	).Error
+
+	
+
+
+
+	return err
 }
 
 func IncreaseUserQuota(id int, quota int) (err error) {
