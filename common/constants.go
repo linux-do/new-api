@@ -105,6 +105,13 @@ var AutomaticEnableChannelEnabled = false
 var QuotaRemindThreshold = 1000
 var PreConsumedQuota = 500
 
+var QuotaForLinuxDoLevel1 = 0
+var QuotaForLinuxDoLevel2 = 0
+var QuotaForLinuxDoLevel3 = 0
+var QuotaForLinuxDoLevel4 = 0
+var LinuxDoUserQuotaRefreshInterval = 24
+var AutomaticRefreshLinuxDoUserQuotaEnabled = false
+
 var RetryTimes = 0
 
 var RootUserEmail = ""
