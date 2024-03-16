@@ -197,7 +197,7 @@ func CacheUpdateUserRefreshTimeStamp(id int, timestamp int64) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	err := common.RedisSet(fmt.Sprintf("user_stamp:%d", id), fmt.Sprintf("%d", timestamp), time.Duration(UserId2QuotaCacheSeconds)*time.Second)
+	err := common.RedisSet(fmt.Sprintf("user_stamp:%d", id), fmt.Sprintf("%d", timestamp), time.Duration(UserId2timeCacheSeconds)*time.Second)
 	return err
 }
 
