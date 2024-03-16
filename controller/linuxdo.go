@@ -191,7 +191,7 @@ func LinuxDoOAuth(c *gin.Context) {
 	// 刷新用户的配额
 	if common.AutomaticRefreshLinuxDoUserQuotaEnabled {
 		TimeStamp := time.Now().Unix()
-		if TimeStamp - user.RefeashTimeStamp > int64(common.LinuxDoUserQuotaRefreshInterval * 60) {
+		if TimeStamp - user.RefeashTimeStamp > int64(common.LinuxDoUserQuotaRefreshInterval * 3600) {
 			model.RefreshUserQuotaAndSave(user.Id, TimeStamp)
 		}
 	}
