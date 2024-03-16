@@ -28,7 +28,13 @@ const OperationSetting = () => {
         DataExportDefaultTime: 'hour',
         DataExportInterval: 5,
         DefaultCollapseSidebar: '', // 默认折叠侧边栏
-        RetryTimes: 0
+        RetryTimes: 0,
+        QuotaForLinuxDoLevel1: 0,
+        QuotaForLinuxDoLevel2: 0,
+        QuotaForLinuxDoLevel3: 0,
+        QuotaForLinuxDoLevel4: 0,
+        LinuxDoUserQuotaRefreshInterval: 24,
+        AutomaticRefreshLinuxDoUserQuotaEnabled: ''
     });
     const [originInputs, setOriginInputs] = useState({});
     let [loading, setLoading] = useState(false);
@@ -139,6 +145,23 @@ const OperationSetting = () => {
                 }
                 if (originInputs['PreConsumedQuota'] !== inputs.PreConsumedQuota) {
                     await updateOption('PreConsumedQuota', inputs.PreConsumedQuota);
+                }
+                break;
+            case 'linuxdoquota':
+                if (originInputs['QuotaForLinuxDoLevel1'] !== inputs.QuotaForLinuxDoLevel1) {
+                    await updateOption('QuotaForLinuxDoLevel1', inputs.QuotaForLinuxDoLevel1);
+                }
+                if (originInputs['QuotaForLinuxDoLevel2'] !== inputs.QuotaForLinuxDoLevel2) {
+                    await updateOption('QuotaForLinuxDoLevel2', inputs.QuotaForLinuxDoLevel2);
+                }
+                if (originInputs['QuotaForLinuxDoLevel3'] !== inputs.QuotaForLinuxDoLevel3) {
+                    await updateOption('QuotaForLinuxDoLevel3', inputs.QuotaForLinuxDoLevel3);
+                }
+                if (originInputs['QuotaForLinuxDoLevel4'] !== inputs.QuotaForLinuxDoLevel4) {
+                    await updateOption('QuotaForLinuxDoLevel4', inputs.QuotaForLinuxDoLevel4);
+                }
+                if (originInputs['LinuxDoUserQuotaRefreshInterval'] !== inputs.LinuxDoUserQuotaRefreshInterval) {
+                    await updateOption('LinuxDoUserQuotaRefreshInterval', inputs.LinuxDoUserQuotaRefreshInterval);
                 }
                 break;
             case 'general':
@@ -403,6 +426,73 @@ const OperationSetting = () => {
                     <Form.Button onClick={() => {
                         submitConfig('quota').then();
                     }}>保存额度设置</Form.Button>
+                    <Divider/>
+                    <Header as='h3'>
+                        Linuxdo 用户额外额度设置
+                    </Header>
+                    <Form.Checkbox
+                        checked={inputs.AutomaticRefreshLinuxDoUserQuotaEnabled === 'true'}
+                        label='启用 Linuxdo 用户额度自动更新（关闭时不会定时自动补充用户额度）'
+                        name='AutomaticRefreshLinuxDoUserQuotaEnabled'
+                        onChange={handleInputChange}
+                    />
+                    <Form.Group widths={5}>
+                        <Form.Input
+                            label='1级用户额度'
+                            name='QuotaForLinuxDoLevel1'
+                            onChange={handleInputChange}
+                            autoComplete='new-password'
+                            value={inputs.QuotaForLinuxDoLevel1}
+                            type='number'
+                            min='0'
+                            placeholder='例如：250000'
+                        />
+                        <Form.Input
+                            label='2级用户额度'
+                            name='QuotaForLinuxDoLevel2'
+                            onChange={handleInputChange}
+                            autoComplete='new-password'
+                            value={inputs.QuotaForLinuxDoLevel2}
+                            type='number'
+                            min='0'
+                            placeholder='例如：1000000'
+                        />
+                        <Form.Input
+                            label='3级用户额度'
+                            name='QuotaForLinuxDoLevel3'
+                            onChange={handleInputChange}
+                            autoComplete='new-password'
+                            value={inputs.QuotaForLinuxDoLevel3}
+                            type='number'
+                            min='0'
+                            placeholder='例如：4000000'
+                        />
+                        <Form.Input
+                            label='4级用户额度'
+                            name='QuotaForLinuxDoLevel4'
+                            onChange={handleInputChange}
+                            autoComplete='new-password'
+                            value={inputs.QuotaForLinuxDoLevel4}
+                            type='number'
+                            min='0'
+                            placeholder='例如：16000000'
+                        />
+                        <Form.Input
+                            label='Linuxdo 用户额度更新间隔（小时）'
+                            name='LinuxDoUserQuotaRefreshInterval'
+                            type={'number'}
+                            step='1'
+                            min='1'
+                            onChange={handleInputChange}
+                            autoComplete='new-password'
+                            value={inputs.LinuxDoUserQuotaRefreshInterval}
+                            placeholder='Linuxdo 用户额度更新间隔（小时）'
+                        />
+
+                    </Form.Group>
+                    <Form.Button onClick={() => {
+                        submitConfig('linuxdoquota').then();
+                    }}>保存 Linuxdo 用户额外额度设置</Form.Button>
                     <Divider/>
                     <Header as='h3'>
                         倍率设置
