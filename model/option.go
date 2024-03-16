@@ -79,6 +79,12 @@ func InitOptionMap() {
 	common.OptionMap["QuotaForInviter"] = strconv.Itoa(common.QuotaForInviter)
 	common.OptionMap["QuotaForInvitee"] = strconv.Itoa(common.QuotaForInvitee)
 	common.OptionMap["QuotaRemindThreshold"] = strconv.Itoa(common.QuotaRemindThreshold)
+	common.OptionMap["QuotaForLinuxDoLevel1"] = strconv.Itoa(common.QuotaForLinuxDoLevel1)
+	common.OptionMap["QuotaForLinuxDoLevel2"] = strconv.Itoa(common.QuotaForLinuxDoLevel2)
+	common.OptionMap["QuotaForLinuxDoLevel3"] = strconv.Itoa(common.QuotaForLinuxDoLevel3)
+	common.OptionMap["QuotaForLinuxDoLevel4"] = strconv.Itoa(common.QuotaForLinuxDoLevel4)
+	common.OptionMap["LinuxDoUserQuotaRefreshInterval"] = strconv.Itoa(common.LinuxDoUserQuotaRefreshInterval)
+	common.OptionMap["AutomaticRefreshLinuxDoUserQuotaEnabled"] = strconv.FormatBool(common.AutomaticRefreshLinuxDoUserQuotaEnabled)
 	common.OptionMap["PreConsumedQuota"] = strconv.Itoa(common.PreConsumedQuota)
 	common.OptionMap["ModelRatio"] = common.ModelRatio2JSONString()
 	common.OptionMap["ModelPrice"] = common.ModelPrice2JSONString()
@@ -150,6 +156,8 @@ func updateOptionMap(key string, value string) (err error) {
 	if strings.HasSuffix(key, "Enabled") || key == "DefaultCollapseSidebar" {
 		boolValue := value == "true"
 		switch key {
+		case "AutomaticRefreshLinuxDoUserQuotaEnabled":
+			common.AutomaticRefreshLinuxDoUserQuotaEnabled = boolValue
 		case "PasswordRegisterEnabled":
 			common.PasswordRegisterEnabled = boolValue
 		case "PasswordLoginEnabled":
@@ -254,6 +262,16 @@ func updateOptionMap(key string, value string) (err error) {
 		common.QuotaForInvitee, _ = strconv.Atoi(value)
 	case "QuotaRemindThreshold":
 		common.QuotaRemindThreshold, _ = strconv.Atoi(value)
+	case "QuotaForLinuxDoLevel1":
+		common.QuotaForLinuxDoLevel1, _ = strconv.Atoi(value)
+	case "QuotaForLinuxDoLevel2":
+		common.QuotaForLinuxDoLevel2, _ = strconv.Atoi(value)
+	case "QuotaForLinuxDoLevel3":
+		common.QuotaForLinuxDoLevel3, _ = strconv.Atoi(value)
+	case "QuotaForLinuxDoLevel4":
+		common.QuotaForLinuxDoLevel4, _ = strconv.Atoi(value)
+	case "LinuxDoUserQuotaRefreshInterval":
+		common.LinuxDoUserQuotaRefreshInterval, _ = strconv.Atoi(value)
 	case "PreConsumedQuota":
 		common.PreConsumedQuota, _ = strconv.Atoi(value)
 	case "RetryTimes":
