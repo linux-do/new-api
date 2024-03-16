@@ -140,6 +140,7 @@ func LinuxDoOAuth(c *gin.Context) {
 			}
 			user.Role = common.RoleCommonUser
 			user.Status = common.UserStatusEnabled
+			user.LinuxTrustLevel = 0
 
 			if err := user.Insert(user.InviterId); err != nil {
 				c.JSON(http.StatusOK, gin.H{
@@ -156,6 +157,45 @@ func LinuxDoOAuth(c *gin.Context) {
 			return
 		}
 	}
+	// 获取旧的信任额度和新的信任额度
+	OldTrustLevel := user.LinuxTrustLevel
+	NewTrustLevel := linuxdoUser.TrustLevel
+	if OldTrustLevel < NewTrustLevel {
+		switch OldTrustLevel {
+			case 1:
+				user.Quota -= common.QuotaForLinuxDoLevel1
+			case 2:
+				user.Quota -= common.QuotaForLinuxDoLevel2
+			case 3:
+				user.Quota -= common.QuotaForLinuxDoLevel3
+		}
+		switch NewTrustLevel {
+			case 2:
+				user.Quota += common.QuotaForLinuxDoLevel2
+			case 3:
+				user.Quota += common.QuotaForLinuxDoLevel3
+			case 4:
+				user.Quota += common.QuotaForLinuxDoLevel4
+		}
+		user.LinuxTrustLevel = NewTrustLevel
+		user.RefeashTimeStamp = 0
+		err = user.Update(false)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+			return
+		}
+	}
+	// 刷新用户的配额
+	if common.AutomaticRefreshLinuxDoUserQuotaEnabled {
+		TimeStamp := time.Now().Unix()
+		if TimeStamp - user.RefeashTimeStamp > int64(common.LinuxDoUserQuotaRefreshInterval * 60) {
+			model.RefreshUserQuotaAndSave(user.Id, TimeStamp)
+		}
+	}
+
 
 	if user.Status != common.UserStatusEnabled {
 		c.JSON(http.StatusOK, gin.H{
@@ -207,6 +247,18 @@ func LinuxDoBind(c *gin.Context) {
 		return
 	}
 	user.LinuxDoId = strconv.Itoa(linuxdoUser.ID)
+	user.LinuxTrustLevel = linuxdoUser.TrustLevel
+	switch user.LinuxTrustLevel {
+	case 1:
+		user.Quota += common.QuotaForLinuxDoLevel1
+	case 2:
+		user.Quota += common.QuotaForLinuxDoLevel2
+	case 3:
+		user.Quota += common.QuotaForLinuxDoLevel3
+	case 4:
+		user.Quota += common.QuotaForLinuxDoLevel4
+	}
+
 	err = user.Update(false)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
