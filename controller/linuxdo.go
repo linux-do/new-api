@@ -170,6 +170,8 @@ func LinuxDoOAuth(c *gin.Context) {
 				user.Quota -= common.QuotaForLinuxDoLevel3
 		}
 		switch NewTrustLevel {
+			case 1:
+				user.Quota += common.QuotaForLinuxDoLevel1
 			case 2:
 				user.Quota += common.QuotaForLinuxDoLevel2
 			case 3:
