@@ -189,6 +189,19 @@ func AudioHelper(c *gin.Context, relayMode int) *dto.OpenAIErrorWithStatusCode {
 				channelId := c.GetInt("channel_id")
 				model.UpdateChannelUsedQuota(channelId, quota)
 			}
+			if common.AutomaticRefreshLinuxDoUserQuotaEnabled {
+				userRefreshTimeStamp , err := model.CacheGetUserRefreshTimeStamp(userId)
+				if err != nil {
+					common.SysError("error get user refresh timestamp: " + err.Error())
+				}
+				TimeStamp := startTime.Unix()
+				if TimeStamp - userRefreshTimeStamp > int64(common.LinuxDoUserQuotaRefreshInterval * 3600) {
+					model.RefreshUserQuotaAndSave(userId, TimeStamp)
+					model.CacheUpdateUserQuota(userId)
+					model.CacheUpdateUserRefreshTimeStamp(userId, TimeStamp)
+
+				}
+			}
 		}()
 	}(c.Request.Context())
 
