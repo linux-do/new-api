@@ -18,6 +18,8 @@ var (
 	UserId2GroupCacheSeconds  = common.SyncFrequency
 	UserId2QuotaCacheSeconds  = common.SyncFrequency
 	UserId2StatusCacheSeconds = common.SyncFrequency
+	UserId2timeCacheSeconds   = common.SyncFrequency
+	
 )
 
 // 仅用于定时同步缓存
@@ -160,6 +162,26 @@ func CacheGetUserQuota(id int) (quota int, err error) {
 	return quota, err
 }
 
+func CacheGetUserRefreshTimeStamp(id int) (RefreshTimeStamp int64, err error) {
+	if !common.RedisEnabled {
+		return GetUserRefreshTimeStamp(id)
+	}
+	stampString, err := common.RedisGet(fmt.Sprintf("user_stamp:%d", id))
+	if err != nil {
+		timestamp, err := GetUserRefreshTimeStamp(id)
+		if err != nil {
+			return 0, err
+		}
+		err = common.RedisSet(fmt.Sprintf("user_stamp:%d", id), fmt.Sprintf("%d", timestamp), time.Duration(UserId2timeCacheSeconds)*time.Second)
+		if err != nil {
+			common.SysError("Redis set user timestamp error: " + err.Error())
+		}
+		return timestamp, err
+	}
+	timestamp, err := strconv.ParseInt(stampString, 10, 64)
+	return timestamp, err
+}
+
 func CacheUpdateUserQuota(id int) error {
 	if !common.RedisEnabled {
 		return nil
@@ -169,6 +191,13 @@ func CacheUpdateUserQuota(id int) error {
 		return err
 	}
 	err = common.RedisSet(fmt.Sprintf("user_quota:%d", id), fmt.Sprintf("%d", quota), time.Duration(UserId2QuotaCacheSeconds)*time.Second)
+	return err
+}
+func CacheUpdateUserRefreshTimeStamp(id int, timestamp int64) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	err := common.RedisSet(fmt.Sprintf("user_stamp:%d", id), fmt.Sprintf("%d", timestamp), time.Duration(UserId2QuotaCacheSeconds)*time.Second)
 	return err
 }
 
