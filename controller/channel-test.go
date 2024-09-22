@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bytedance/gopkg/util/gopool"
 	"io"
 	"math"
 	"net/http"
@@ -24,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,9 +37,15 @@ func testChannel(channel *model.Channel, testModel string) (err error, openAIErr
 	}
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
+	baseUrl := channel.GetBaseURL()
+	chatPath := "/v1/chat/completions"
+	if strings.HasPrefix(baseUrl, "https://models.inference.ai.azure.com") {
+		chatPath = "/chat/completions"
+	}
+	common.SysLog(fmt.Sprintf("testing channel %d with model %s  path %s", channel.Id, testModel, chatPath))
 	c.Request = &http.Request{
 		Method: "POST",
-		URL:    &url.URL{Path: "/v1/chat/completions"},
+		URL:    &url.URL{Path: chatPath},
 		Body:   nil,
 		Header: make(http.Header),
 	}

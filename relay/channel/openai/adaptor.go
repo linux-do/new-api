@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -19,6 +18,8 @@ import (
 	relaycommon "one-api/relay/common"
 	"one-api/relay/constant"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Adaptor struct {
@@ -47,6 +48,14 @@ func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
 		return minimax.GetRequestURL(info)
 	case common.ChannelTypeCustom:
 		url := info.BaseUrl
+		if strings.HasPrefix(url, "https://models.inference.ai.azure.com") {
+			url = strings.TrimPrefix(url, "/v1")
+			if info.RelayMode == constant.RelayModeCompletions {
+				url = fmt.Sprintf("%s/%s", url, "chat/completions")
+			} else if info.RelayMode == constant.RelayModeEmbeddings {
+				url = fmt.Sprintf("%s/%s", url, "embeddings")
+			}
+		}
 		url = strings.Replace(url, "{model}", info.UpstreamModelName, -1)
 		return url, nil
 	default:
